@@ -1,6 +1,7 @@
 package mesosphere.marathon
 package core.matcher.base.util
 
+import com.typesafe.scalalogging.StrictLogging
 import mesosphere.marathon.core.async.ExecutionContexts
 import mesosphere.marathon.core.matcher.base.OfferMatcher
 import mesosphere.marathon.core.matcher.base.OfferMatcher.MatchedInstanceOps
@@ -11,8 +12,9 @@ import scala.concurrent.Future
 /**
   * Wraps multiple offer matchers and returns the first non-empty match or (if all are empty) the last empty match.
   */
-class StopOnFirstMatchingOfferMatcher(chained: OfferMatcher*) extends OfferMatcher {
+class StopOnFirstMatchingOfferMatcher(chained: OfferMatcher*) extends OfferMatcher with StrictLogging {
   override def matchOffer(offer: Offer): Future[MatchedInstanceOps] = {
+    logger.debug(s"Match offer=${offer.getId.getValue}")
     chained.foldLeft(Future.successful(MatchedInstanceOps.noMatch(offer.getId, resendThisOffer = false))) {
       case (matchedFuture, nextMatcher) =>
         matchedFuture.flatMap { matched =>

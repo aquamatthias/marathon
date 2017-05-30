@@ -19,6 +19,7 @@ private[launcher] class TaskLauncherImpl(
   private[this] val declinedOffersMeter = Metrics.minMaxCounter(ServiceMetric, getClass, "declinedOffers")
 
   override def acceptOffer(offerID: OfferID, taskOps: Seq[InstanceOp]): Boolean = {
+    log.debug("Accept offer={}", offerID.getValue)
     val accepted = withDriver(s"launchTasks($offerID)") { driver =>
 
       //We accept the offer, the rest of the offer is declined automatically with the given filter.

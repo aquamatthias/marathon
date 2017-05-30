@@ -39,6 +39,7 @@ private[reconcile] class OfferMatcherReconciler(instanceTracker: InstanceTracker
   import mesosphere.marathon.core.async.ExecutionContexts.global
 
   override def matchOffer(offer: Offer): Future[MatchedInstanceOps] = {
+    log.debug("Match offer={}", offer.getId.getValue)
 
     val frameworkId = FrameworkId("").mergeFromProto(offer.getFrameworkId)
 

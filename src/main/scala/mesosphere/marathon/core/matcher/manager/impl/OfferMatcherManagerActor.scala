@@ -202,7 +202,7 @@ private[impl] class OfferMatcherManagerActor private (
 
   def receiveMatchedInstances: Receive = {
     case OfferMatcher.MatchedInstanceOps(offerId, addedOps, resendOffer) =>
-      log.debug(s"Received MatchedInstanceOps: offer=${offerId.getValue}")
+      log.debug("Received MatchedInstanceOps: offer={}, addedOps={}", offerId.getValue, addedOps)
       def processAddedInstances(data: MatchOfferData): MatchOfferData = {
         val dataWithInstances = try {
           val (acceptedOps, rejectedOps) =
@@ -320,6 +320,7 @@ private[impl] class OfferMatcherManagerActor private (
           "Tune with --launch_tokens/launch_token_refresh_interval.")
       None
     } else {
+      log.debug("Get next Matcher from queue {}", data.matcherQueue)
       data.nextMatcherOpt
     }
 

@@ -364,13 +364,16 @@ private class TaskLauncherActor(
       promise.trySuccess(MatchedInstanceOps.noMatch(offer.getId))
 
     case ActorOfferMatcher.MatchOffer(offer, promise) =>
+      log.debug(s"Received MatchOffer: offer=${offer.getId.getValue}")
       val reachableInstances = instanceMap.filterNotAs{ case (_, instance) => instance.state.condition.isLost }
       val matchRequest = InstanceOpFactory.Request(runSpec, offer, reachableInstances, instancesToLaunch)
       instanceOpFactory.matchOfferRequest(matchRequest) match {
         case matched: OfferMatchResult.Match =>
+          log.debug("Matched offer={}", offer.getId.getValue)
           offerMatchStatisticsActor ! matched
           handleInstanceOp(matched.instanceOp, offer, promise)
         case notMatched: OfferMatchResult.NoMatch =>
+          log.debug("No Match for offer={}", offer.getId.getValue)
           offerMatchStatisticsActor ! notMatched
           promise.trySuccess(MatchedInstanceOps.noMatch(offer.getId))
       }
@@ -430,6 +433,7 @@ private class TaskLauncherActor(
   }
 
   private[this] def scheduleTaskOpTimeout(instanceOp: InstanceOp): Unit = {
+    log.debug("Schedule TaskOpTimeout: instanceId={}", instanceOp.instanceId)
     val reject = InstanceOpSourceDelegate.InstanceOpRejected(
       instanceOp, TaskLauncherActor.OfferOperationRejectedTimeoutReason
     )

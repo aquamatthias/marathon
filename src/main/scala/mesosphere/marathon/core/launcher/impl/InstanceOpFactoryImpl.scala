@@ -84,6 +84,7 @@ class InstanceOpFactoryImpl(
   }
 
   private[this] def inferNormalTaskOp(app: AppDefinition, request: InstanceOpFactory.Request): OfferMatchResult = {
+    log.debug("inferNormalTaskOp")
     val InstanceOpFactory.Request(runSpec, offer, instances, _) = request
 
     val matchResponse =
