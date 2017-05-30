@@ -21,6 +21,7 @@ class ActorOfferMatcher(actorRef: ActorRef, override val precedenceFor: Option[P
     extends OfferMatcher with StrictLogging {
 
   def matchOffer(offer: Offer): Future[MatchedInstanceOps] = {
+    logger.debug(s"Matching offer=${offer.getId.getValue}")
     val p = Promise[MatchedInstanceOps]()
     actorRef ! ActorOfferMatcher.MatchOffer(offer, p)
     p.future

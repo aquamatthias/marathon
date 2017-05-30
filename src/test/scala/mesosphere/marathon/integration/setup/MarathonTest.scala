@@ -131,6 +131,10 @@ case class LocalMarathon(
       "-Dakka.actor.default-dispatcher.fork-join-executor.parallelism-max=4",
       "-Dscala.concurrent.context.minThreads=2",
       "-Dscala.concurrent.context.maxThreads=32",
+      // Activate hprof
+      s"-agentlib:hprof=cpu=samples,file=$suiteName.hprof",
+      "-XX:-PrintConcurrentLocks",
+      "-XX:-PrintClassHistogram",
       s"-DmarathonUUID=$uuid -DtestSuite=$suiteName", "-classpath", cp, "-client", mainClass) ++ args
     Process(cmd, workDir, sys.env.toSeq: _*)
   }

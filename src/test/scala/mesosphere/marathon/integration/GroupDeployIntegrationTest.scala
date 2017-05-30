@@ -256,6 +256,7 @@ class GroupDeployIntegrationTest extends AkkaIntegrationTest with EmbeddedMarath
     }
 
     "A group with a running deployment can not be deleted without force" in temporaryGroup{ gid =>
+
       val appId = gid / nextAppId()
 
       Given(s"A group with one application with id $appId with an upgrade in progress")

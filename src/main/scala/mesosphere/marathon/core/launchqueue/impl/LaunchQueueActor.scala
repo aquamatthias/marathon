@@ -80,6 +80,7 @@ private[impl] class LaunchQueueActor(
     */
   private[this] def receiveHandlePurging: Receive = {
     case Purge(runSpecId) =>
+      log.debug("Received Purge message for: app={}", runSpecId)
       launchers.get(runSpecId) match {
         case Some(actorRef) =>
           val deferredMessages: Vector[DeferredMessage] =
@@ -90,7 +91,9 @@ private[impl] class LaunchQueueActor(
         case None => sender() ! (())
       }
 
-    case ConfirmPurge => sender() ! (())
+    case ConfirmPurge =>
+      log.debug("Received ConfirmPurge message")
+      sender() ! (())
 
     case Terminated(actorRef) =>
       launcherRefs.get(actorRef) match {
@@ -102,6 +105,7 @@ private[impl] class LaunchQueueActor(
             case None =>
               log.warning("Got unexpected terminated for runSpec {}: {}", pathId, actorRef)
             case Some(deferredMessages) =>
+              log.debug(s"Send deferred messages: $deferredMessages")
               deferredMessages.foreach(msg => self.tell(msg.message, msg.sender))
 
               suspendedLauncherPathIds -= pathId

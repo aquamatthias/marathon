@@ -288,6 +288,7 @@ private class TaskLauncherActor(
   }
 
   private[this] def removeInstance(instanceId: Instance.Id): Unit = {
+    log.debug("Remove instance: instanceId={}", instanceId)
     inFlightInstanceOperations.get(instanceId).foreach(_.cancel())
     inFlightInstanceOperations -= instanceId
     instanceMap -= instanceId

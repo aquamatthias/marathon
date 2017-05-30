@@ -47,6 +47,7 @@ private[launchqueue] class LaunchQueueDelegate(
   override def listRunSpecs: Seq[RunSpec] = list.map(_.runSpec)
 
   override def purge(runSpecId: PathId): Unit = {
+    logger.debug(s"Send Purge message: app=${runSpecId}")
     askQueueActor[LaunchQueueDelegate.Request, Unit]("purge", timeout = purgeTimeout)(LaunchQueueDelegate.Purge(runSpecId))
   }
 

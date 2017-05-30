@@ -69,6 +69,7 @@ private[launcher] class OfferProcessorImpl(
     Metrics.minMaxCounter(ServiceMetric, getClass, "savingTasksErrors")
 
   override def processOffer(offer: Offer): Future[Done] = {
+    logger.debug(s"Processing offer ${offer.getId.getValue}")
     incomingOffersMeter.increment()
     offerStreamInput.offer(offer)
 
@@ -84,6 +85,7 @@ private[launcher] class OfferProcessorImpl(
           MatchedInstanceOps.noMatch(offer.getId, resendThisOffer = true)
       }.flatMap {
         case MatchedInstanceOps(offerId, tasks, resendThisOffer) =>
+          logger.debug(s"Matched instance: offer=${offerId.getValue}, tasks=${tasks.map(_.instanceId)}")
           savingTasksTimeMeter {
             saveTasks(tasks).map { savedTasks =>
               def notAllSaved: Boolean = savedTasks.size != tasks.size

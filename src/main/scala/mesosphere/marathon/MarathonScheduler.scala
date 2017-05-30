@@ -3,6 +3,7 @@ package mesosphere.marathon
 import javax.inject.Inject
 
 import akka.event.EventStream
+import com.typesafe.scalalogging.StrictLogging
 import mesosphere.marathon.core.base._
 import mesosphere.marathon.core.event.{ SchedulerRegisteredEvent, _ }
 import mesosphere.marathon.core.launcher.OfferProcessor
@@ -25,9 +26,7 @@ class MarathonScheduler @Inject() (
     taskStatusProcessor: TaskStatusUpdateProcessor,
     frameworkIdRepository: FrameworkIdRepository,
     mesosLeaderInfo: MesosLeaderInfo,
-    config: MarathonConf) extends Scheduler {
-
-  private[this] val log = LoggerFactory.getLogger(getClass.getName)
+    config: MarathonConf) extends Scheduler with StrictLogging {
 
   private var lastMesosMasterVersion: Option[SemanticVersion] = Option.empty
   import mesosphere.marathon.core.async.ExecutionContexts.global
@@ -38,7 +37,7 @@ class MarathonScheduler @Inject() (
     driver: SchedulerDriver,
     frameworkId: FrameworkID,
     master: MasterInfo): Unit = {
-    log.info(s"Registered as ${frameworkId.getValue} to master '${master.getId}'")
+    logger.info(s"Registered as ${frameworkId.getValue} to master '${master.getId}'")
     masterVersionCheck(master)
     Await.result(frameworkIdRepository.store(FrameworkId.fromProto(frameworkId)), zkTimeout)
     mesosLeaderInfo.onNewMasterInfo(master)
@@ -46,7 +45,7 @@ class MarathonScheduler @Inject() (
   }
 
   override def reregistered(driver: SchedulerDriver, master: MasterInfo): Unit = {
-    log.info("Re-registered to %s".format(master))
+    logger.info("Re-registered to %s".format(master))
     masterVersionCheck(master)
     mesosLeaderInfo.onNewMasterInfo(master)
     eventBus.publish(SchedulerReregisteredEvent(master.getHostname))
@@ -56,23 +55,23 @@ class MarathonScheduler @Inject() (
     offers.foreach { offer =>
       val processFuture = offerProcessor.processOffer(offer)
       processFuture.onComplete {
-        case scala.util.Success(_) => log.debug(s"Finished processing offer '${offer.getId.getValue}'")
-        case scala.util.Failure(NonFatal(e)) => log.error(s"while processing offer '${offer.getId.getValue}'", e)
+        case scala.util.Success(_) => logger.debug(s"Finished processing offer '${offer.getId.getValue}'")
+        case scala.util.Failure(NonFatal(e)) => logger.error(s"while processing offer '${offer.getId.getValue}'", e)
       }
     }
   }
 
   override def offerRescinded(driver: SchedulerDriver, offer: OfferID): Unit = {
-    log.info("Offer %s rescinded".format(offer))
+    logger.info("Offer %s rescinded".format(offer))
   }
 
   override def statusUpdate(driver: SchedulerDriver, status: TaskStatus): Unit = {
-    log.info("Received status update for task %s: %s (%s)"
+    logger.info("Received status update for task %s: %s (%s)"
       .format(status.getTaskId.getValue, status.getState, status.getMessage))
 
     taskStatusProcessor.publish(status).onFailure {
       case NonFatal(e) =>
-        log.error(s"while processing task status update $status", e)
+        logger.error(s"while processing task status update $status", e)
     }
   }
 
@@ -81,12 +80,12 @@ class MarathonScheduler @Inject() (
     executor: ExecutorID,
     slave: SlaveID,
     message: Array[Byte]): Unit = {
-    log.info(s"Received framework message $executor $slave $message")
+    logger.info(s"Received framework message $executor $slave $message")
     eventBus.publish(MesosFrameworkMessageEvent(executor.getValue, slave.getValue, message))
   }
 
   override def disconnected(driver: SchedulerDriver): Unit = {
-    log.warn("Disconnected")
+    logger.warn("Disconnected")
 
     eventBus.publish(SchedulerDisconnectedEvent())
 
@@ -98,7 +97,7 @@ class MarathonScheduler @Inject() (
   }
 
   override def slaveLost(driver: SchedulerDriver, slave: SlaveID): Unit = {
-    log.info(s"Lost slave $slave")
+    logger.info(s"Lost slave $slave")
   }
 
   override def executorLost(
@@ -106,11 +105,11 @@ class MarathonScheduler @Inject() (
     executor: ExecutorID,
     slave: SlaveID,
     p4: Int): Unit = {
-    log.info(s"Lost executor $executor slave $p4")
+    logger.info(s"Lost executor $executor slave $p4")
   }
 
   override def error(driver: SchedulerDriver, message: String): Unit = {
-    log.warn(s"Error: $message\n" +
+    logger.warn(s"Error: $message\n" +
       "In case Mesos does not allow registration with the current frameworkId, " +
       s"delete the ZooKeeper Node: ${config.zkPath}/state/framework:id\n" +
       "CAUTION: if you remove this node, all tasks started with the current frameworkId will be orphaned!")
@@ -136,10 +135,10 @@ class MarathonScheduler @Inject() (
     */
   protected def masterVersionCheck(masterInfo: MasterInfo): Unit = {
     val masterVersion = masterInfo.getVersion
-    log.info(s"Mesos Master version $masterVersion")
+    logger.info(s"Mesos Master version $masterVersion")
     lastMesosMasterVersion = SemanticVersion(masterVersion)
     if (!LibMesos.masterCompatible(masterVersion)) {
-      log.error(s"Mesos Master version $masterVersion does not meet minimum required version ${LibMesos.MesosMasterMinimumVersion}")
+      logger.error(s"Mesos Master version $masterVersion does not meet minimum required version ${LibMesos.MesosMasterMinimumVersion}")
       suicide(removeFrameworkId = false)
     }
   }
@@ -159,7 +158,7 @@ class MarathonScheduler @Inject() (
     * the leading Mesos master process is killed.
     */
   protected def suicide(removeFrameworkId: Boolean): Unit = {
-    log.error("Committing suicide!")
+    logger.error("Committing suicide!")
 
     if (removeFrameworkId) Await.ready(frameworkIdRepository.delete(), config.zkTimeoutDuration)
 

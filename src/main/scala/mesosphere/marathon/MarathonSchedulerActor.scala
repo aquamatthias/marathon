@@ -295,7 +295,11 @@ class MarathonSchedulerActor private (
 
   def deploymentFailed(plan: DeploymentPlan, reason: Throwable): Unit = {
     logger.error(s"Deployment ${plan.id}:${plan.version} of ${plan.target.id} failed", reason)
-    plan.affectedRunSpecIds.foreach(runSpecId => launchQueue.purge(runSpecId))
+    plan.affectedRunSpecIds.foreach { runSpecId =>
+      // Ugly hot fix for MARATHON-7365. Do not wait for purge!
+      // Future(launchQueue.purge(runSpecId))
+      launchQueue.purge(runSpecId)
+    }
     eventBus.publish(core.event.DeploymentFailed(plan.id, plan))
   }
 }

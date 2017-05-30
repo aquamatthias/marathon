@@ -202,6 +202,7 @@ private[impl] class OfferMatcherManagerActor private (
 
   def receiveMatchedInstances: Receive = {
     case OfferMatcher.MatchedInstanceOps(offerId, addedOps, resendOffer) =>
+      log.debug(s"Received MatchedInstanceOps: offer=${offerId.getValue}")
       def processAddedInstances(data: MatchOfferData): MatchOfferData = {
         val dataWithInstances = try {
           val (acceptedOps, rejectedOps) =
